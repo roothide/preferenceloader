@@ -1,21 +1,16 @@
-THEOS_PLATFORM_SDK_ROOT_armv6 = /Applications/Xcode_Legacy.app/Contents/Developer
-ifneq ($(wildcard $(THEOS_PLATFORM_SDK_ROOT_armv6)/*),)
-THEOS_PLATFORM_SDK_ROOT_armv7 = /Volumes/Xcode/Xcode.app/Contents/Developer
-THEOS_PLATFORM_SDK_ROOT_armv7s = /Volumes/Xcode/Xcode.app/Contents/Developer
-THEOS_PLATFORM_SDK_ROOT_arm64 = /Volumes/Xcode_9.4.1/Xcode.app/Contents/Developer
-SDKVERSION_armv6 = 5.1
+SDKVERSION_armv6 = 4.3
+SDKVERSION_armv7 = 4.3
+SDKVERSION_armv7s = 6.0
+SDKVERSION_arm64 = 9.0
+SDKVERSION_arm64e = 12.2
 TARGET_IPHONEOS_DEPLOYMENT_VERSION = 7.0
 TARGET_IPHONEOS_DEPLOYMENT_VERSION_armv6 = 2.0
 TARGET_IPHONEOS_DEPLOYMENT_VERSION_armv7 = 3.0
 TARGET_IPHONEOS_DEPLOYMENT_VERSION_armv7s = 6.0
 TARGET_IPHONEOS_DEPLOYMENT_VERSION_arm64 = 7.0
-TARGET_IPHONEOS_DEPLOYMENT_VERSION_arm64e = 8.4
+TARGET_IPHONEOS_DEPLOYMENT_VERSION_arm64e = 12.0
 IPHONE_ARCHS = armv6 armv7 arm64 arm64e
 libprefs_IPHONE_ARCHS = armv6 armv7 armv7s arm64 arm64e
-else
-IPHONE_ARCHS = armv7 arm64 arm64e
-libprefs_IPHONE_ARCHS = armv7 armv7s arm64 arm64e
-endif
 
 include framework/makefiles/common.mk
 

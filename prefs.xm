@@ -238,7 +238,7 @@ static void pl_loadFailedBundle(NSString *bundlePath, PSSpecifier *specifier) {
 
 static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, void(*_orig)(id, SEL, PSSpecifier *)) {
 	NSString *bundlePath = [[specifier propertyForKey:PSLazilyLoadedBundleKey] retain];
-	PLLog(@"In pl_lazyLoadBundleCore for %@ (%s), specifier %@", self, _cmd, specifier);
+	PLLog(@"In pl_lazyLoadBundleCore for %@ (%s), specifier %@", self, sel_getName(_cmd), specifier);
 	PLLog(@"%%orig is %p.", _orig);
 
 	_orig(self, _cmd, specifier); // NB: This removes the PSLazilyLoadedBundleKey property.

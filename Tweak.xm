@@ -93,7 +93,7 @@ static NSInteger PSSpecifierSort(PSSpecifier *a1, PSSpecifier *a2, void *context
 			NSInteger firstindex;
 			if ([self getGroup:&group row:&row ofSpecifierID:_Firmware_lt_60 ? @"General" : @"TWITTER"]) {
 				firstindex = [self indexOfGroup:group] + [[self specifiersInGroup:group] count];
-				PLLog(@"Adding to the end of group %d at index %d", group, firstindex);
+				PLLog(@"Adding to the end of group %ld at index %ld", (long)group, (long)firstindex);
 			} else {
 				firstindex = [_specifiers count];
 				PLLog(@"Adding to the end of entire list");
@@ -108,7 +108,7 @@ static NSInteger PSSpecifierSort(PSSpecifier *a1, PSSpecifier *a2, void *context
 				++groupIndex;
 			}
 			_extraPrefsGroupSectionID = groupIndex;
-			PLLog(@"group index is %d", _extraPrefsGroupSectionID);
+			PLLog(@"group index is %ld", (long)_extraPrefsGroupSectionID);
 		}
 	}
 	return MSHookIvar<id>(self, "_specifiers");

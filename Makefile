@@ -15,9 +15,9 @@ libprefs_IPHONE_ARCHS = armv6 armv7 armv7s arm64 arm64e
 include framework/makefiles/common.mk
 
 LIBRARY_NAME = libprefs
-libprefs_LOGOSFLAGS = -c generator=internal
 libprefs_FILES = prefs.xm
 libprefs_FRAMEWORKS = UIKit
+libprefs_LIBRARIES = substrate
 libprefs_PRIVATE_FRAMEWORKS = Preferences
 libprefs_CFLAGS = -I.
 libprefs_COMPATIBILITY_VERSION = 2.2.0

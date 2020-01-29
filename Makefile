@@ -11,6 +11,7 @@ TARGET_IPHONEOS_DEPLOYMENT_VERSION_arm64 = 7.0
 TARGET_IPHONEOS_DEPLOYMENT_VERSION_arm64e = 12.0
 IPHONE_ARCHS = armv6 armv7 arm64 arm64e
 libprefs_IPHONE_ARCHS = armv6 armv7 armv7s arm64 arm64e
+ADDITIONAL_LDFLAGS = -Wl,-no_data_const
 
 include framework/makefiles/common.mk
 

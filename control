@@ -1,10 +1,10 @@
 Package: preferenceloader
 Name: PreferenceLoader
 Depends: mobilesubstrate
-Version: 2.2.4~beta1
+Version: 2.2.4~beta3
 Architecture: iphoneos-arm
 Description: load preferences in style
-Maintainer: Dustin Howett <cydia.pl@relay.howett.net>
+Maintainer: Sam Bingner <maintainer@sbdhi.com>
 Author: Dustin Howett <cydia.pl@relay.howett.net>
 Section: System
 dev: dustinhowett

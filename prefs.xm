@@ -167,8 +167,9 @@ static BOOL _Firmware_lt_60 = NO;
 
 - (id)specifiers {
 	if(!_specifiers) {
-		PLLog(@"Generating error specifiers for a failed bundle :(");
-		NSString *const errorText = [NSString stringWithFormat:@"There was an error loading the preference bundle for %@.", [[self specifier] name]];
+		NSString *name = [[self specifier] name];
+		PLLog(@"Generating error specifiers for a failed bundle %@ :(", name);
+		NSString *const errorText = [NSString stringWithFormat:@"There was an error loading the preference bundle for %@: %@", name, [[self specifier] propertyForKey:@"errorText"]];
 		_specifiers = [[NSArray alloc] initWithArray:generateErrorSpecifiersWithText(errorText)];
 	}
 	return _specifiers;
@@ -224,9 +225,10 @@ static NSArray *generateErrorSpecifiersWithText(NSString *errorText) {
 /* }}} */
 
 /* {{{ Hooks */
-static void pl_loadFailedBundle(NSString *bundlePath, PSSpecifier *specifier) {
+static void pl_loadFailedBundle(NSString *bundlePath, PSSpecifier *specifier, NSError *error) {
 	PLLog(@"lazyLoadBundle:%@ (bundle path %@) failed.", specifier, bundlePath);
-	NSLog(@"Failed to load PreferenceBundle at %@.", bundlePath);
+	NSLog(@"Failed to load PreferenceBundle at %@: %@", bundlePath, [error description]);
+	[specifier setProperty:[error localizedDescription] forKey:@"errorText"];
 	MSHookIvar<Class>(specifier, "detailControllerClass") = [PLFailedBundleListController class];
 	[specifier removePropertyForKey:PSBundleIsControllerKey];
 	[specifier removePropertyForKey:PSActionKey];
@@ -240,8 +242,11 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 	PLLog(@"%%orig is %p.", _orig);
 
 	_orig(self, _cmd, specifier); // NB: This removes the PSLazilyLoadedBundleKey property.
-	if(![[NSBundle bundleWithPath:bundlePath] isLoaded]) {
-		pl_loadFailedBundle(bundlePath, specifier);
+	NSBundle *bundle = [NSBundle bundleWithPath:bundlePath];
+	NSError *error = nil;
+	if(![bundle isLoaded] && ![bundle loadAndReturnError:&error]) {
+		PLLog(@"error loading %@: %@", bundlePath, [error description]);
+		pl_loadFailedBundle(bundlePath, specifier, error);
 	}
 	[bundlePath release];
 }

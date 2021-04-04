@@ -45,7 +45,7 @@ static NSString **pPSStaticTextGroupKey = NULL;
 /* }}} */
 
 /* {{{ Prototypes */
-static NSArray *generateErrorSpecifiersWithText(NSString *errorText);
+static NSArray *generateErrorSpecifiersWithText(id self, NSString *errorText, NSString *errorDetailText);
 /* }}} */
 
 /* {{{ Constants */
@@ -70,7 +70,7 @@ static BOOL _Firmware_lt_60 = NO;
 		PSSpecifier *specifier = [self specifier];
 		if(!specifier) {
 			NSString *errorText = @"There appears to have been an error restoring these preferences!";
-			return _specifiers = [[NSArray alloc] initWithArray:generateErrorSpecifiersWithText(errorText)];
+			return _specifiers = [[NSArray alloc] initWithArray:generateErrorSpecifiersWithText(self, errorText, nil)];
 		}
 		NSString *alternatePlistName = [specifier propertyForKey:PLAlternatePlistNameKey];
 		if(alternatePlistName)
@@ -80,7 +80,7 @@ static BOOL _Firmware_lt_60 = NO;
 		if(!_specifiers || [_specifiers count] == 0) {
 			[_specifiers release];
 			NSString *errorText = @"There appears to be an error with these preferences!";
-			_specifiers = [[NSArray alloc] initWithArray:generateErrorSpecifiersWithText(errorText)];
+			_specifiers = [[NSArray alloc] initWithArray:generateErrorSpecifiersWithText(self, errorText, nil)];
 		} else {
 			if([self respondsToSelector:@selector(setTitle:)]) {
 				[self setTitle:specifier.name];
@@ -159,6 +159,7 @@ static BOOL _Firmware_lt_60 = NO;
 @end
 
 @interface PLFailedBundleListController: PSListController { }
+@property (retain) NSArray *errorSpecifiers;
 @end
 @implementation PLFailedBundleListController
 - (id)navigationTitle {
@@ -170,15 +171,51 @@ static BOOL _Firmware_lt_60 = NO;
 		NSString *name = [[self specifier] name];
 		PLLog(@"Generating error specifiers for a failed bundle %@ :(", name);
 		NSString *const errorText = [NSString stringWithFormat:@"There was an error loading the preference bundle for %@: %@", name, [[self specifier] propertyForKey:@"errorText"]];
-		_specifiers = [[NSArray alloc] initWithArray:generateErrorSpecifiersWithText(errorText)];
+		NSString *errorDetailText = [[self specifier] propertyForKey:@"errorDetailText"];
+		_specifiers = [[NSArray alloc] initWithArray:generateErrorSpecifiersWithText(self, errorText, errorDetailText)];
 	}
 	return _specifiers;
+}
+
+- (void)showErrorDetails:(PSSpecifier *)spec {
+	NSString *errorDetailText = [spec propertyForKey:@"errorDetailText"];
+	spec.name = @"Hide Details";
+	spec->action = @selector(hideErrorDetails:);
+	[self performSelectorOnMainThread:@selector(reloadSpecifier:) withObject:spec waitUntilDone:YES];
+	if (_errorSpecifiers == nil) {
+		NSMutableArray *errorSpecs = [NSMutableArray array];
+		if (pPSFooterTextGroupKey) {
+			PSSpecifier *newSpec = [PSSpecifier emptyGroupSpecifier];
+			[newSpec setProperty:errorDetailText forKey:*pPSFooterTextGroupKey];
+			[newSpec setIdentifier:@"ERROR_DETAIL_TEXT"];
+			[errorSpecs addObject:newSpec];
+		} else if (pPSStaticTextGroupKey) {
+			PSSpecifier *newSpec = [PSSpecifier emptyGroupSpecifier];
+			[newSpec setProperty:[NSNumber numberWithBool:YES] forKey:*pPSStaticTextGroupKey];
+			[errorSpecs addObject:newSpec];
+			newSpec = [PSSpecifier preferenceSpecifierNamed:errorDetailText target:nil set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSTitleValueCell"] edit:nil];
+			[errorSpecs addObject:newSpec];
+		}
+		_errorSpecifiers = [errorSpecs copy];
+	}
+	[self addSpecifiersFromArray:_errorSpecifiers animated:YES];
+	Class $UIPasteboard = NSClassFromString(@"UIPasteboard");
+	if ($UIPasteboard != NULL) {
+		[$UIPasteboard generalPasteboard].string = errorDetailText;
+	}
+}
+
+- (void)hideErrorDetails:(PSSpecifier *)spec {
+	spec.name = @"Show Details";
+	spec->action = @selector(showErrorDetails:);
+	[self reloadSpecifier:spec];
+	[self removeContiguousSpecifiers:_errorSpecifiers animated:YES];
 }
 @end
 /* }}} */
 
 /* {{{ Helper Functions */
-static NSArray *generateErrorSpecifiersWithText(NSString *errorText) {
+static NSArray *generateErrorSpecifiersWithText(id self, NSString *errorText, NSString *errorDetailText) {
 	NSMutableArray *errorSpecifiers = [NSMutableArray array];
 	if(pPSFooterTextGroupKey) {
 		PSSpecifier *spec = [PSSpecifier emptyGroupSpecifier];
@@ -192,6 +229,13 @@ static NSArray *generateErrorSpecifiersWithText(NSString *errorText) {
 			spec = [PSSpecifier preferenceSpecifierNamed:errorText target:nil set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSTitleValueCell"] edit:nil];
 			[errorSpecifiers addObject:spec];
 		}
+	}
+	if (errorDetailText != nil && self != nil) {
+		[errorSpecifiers addObject:[PSSpecifier emptyGroupSpecifier]];
+		PSSpecifier *spec = [PSSpecifier preferenceSpecifierNamed:@"Show Details" target:self set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSButtonCell"] edit:nil];
+		spec->action = @selector(showErrorDetails:);
+		[spec setProperty:errorDetailText forKey:@"errorDetailText"];
+		[errorSpecifiers addObject:spec];
 	}
 	return errorSpecifiers;
 }
@@ -229,6 +273,8 @@ static void pl_loadFailedBundle(NSString *bundlePath, PSSpecifier *specifier, NS
 	PLLog(@"lazyLoadBundle:%@ (bundle path %@) failed.", specifier, bundlePath);
 	NSLog(@"Failed to load PreferenceBundle at %@: %@", bundlePath, [error description]);
 	[specifier setProperty:[error localizedDescription] forKey:@"errorText"];
+	NSDictionary *errorInfo = [error userInfo];
+	[specifier setProperty:[errorInfo objectForKey:@"NSDebugDescription"]?:[errorInfo description] forKey:@"errorDetailText"];
 	MSHookIvar<Class>(specifier, "detailControllerClass") = [PLFailedBundleListController class];
 	[specifier removePropertyForKey:PSBundleIsControllerKey];
 	[specifier removePropertyForKey:PSActionKey];

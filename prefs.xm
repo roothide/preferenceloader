@@ -352,6 +352,10 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 
 	PLLog(@"Loading specifiers from PSListController's specifier's properties.");
 	NSMutableArray *&bundleControllers = MSHookIvar<NSMutableArray *>(self, "_bundleControllers");
+
+	// This code fixes the problem that the Safari website setting return crashes after entering the setting item.
+	if(!bundleControllers){return result;}
+	
 	NSString *title = nil;
 	NSString *specifierID = nil;
 	result = SpecifiersFromPlist(properties, [self specifier], target, plistName, [self bundle], &title, &specifierID, self, &bundleControllers);

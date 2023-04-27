@@ -359,8 +359,9 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 	NSString *title = nil;
 	NSString *specifierID = nil;
 	result = SpecifiersFromPlist(properties, [self specifier], target, plistName, [self bundle], &title, &specifierID, self, &bundleControllers);
-
-	if(title)
+	
+	// Fix the blank titles of the phone setting items [Mute Unknown Calls] and [Call Blocking and Identification] 
+	if(title.length > 0)
 		[self setTitle:title];
 
 	if(specifierID)

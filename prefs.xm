@@ -308,13 +308,15 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 %end
 %end
 
-%hook PSListController
 %group Firmware_ge_60
+%hook PSListController
 - (void)lazyLoadBundle:(PSSpecifier *)specifier {
 	pl_lazyLoadBundleCore(self, _cmd, specifier, (void(*)(id, SEL, PSSpecifier *))&%orig);
 }
 %end
+%end
 
+%hook PSListController
 %new
 - (PSViewController *)controllerForSpecifier:(PSSpecifier *)specifier
 {
@@ -364,6 +366,7 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 
 	return result;
 }
+%end
 %end
 
 %hook NSBundle

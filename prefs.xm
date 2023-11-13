@@ -342,8 +342,19 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 	}
 	return [result autorelease];
 }
+%end
+
+%group Rootful
+%hook PSListController
+
+// This hook does not seem to be needed on modern iOS, and actually breaks some things
+// (Safari settings after entering a subpane, blank titles on Phone > Mute Unknown Calls
+// and Phone > Call Blocking and Identification). 
+// However, I'm not sure what iOS versions need it (and we want to still support rootful),
+// so I'm leaving it here but gated.
 
 - (NSArray *)loadSpecifiersFromPlistName:(NSString *)plistName target:(id)target {
+	PLLog(@"Loading specifiers from plist %@.", plistName);
 	NSArray *result = %orig();
 	if([result count] > 0)
 		return result;
@@ -354,12 +365,16 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 
 	PLLog(@"Loading specifiers from PSListController's specifier's properties.");
 	NSMutableArray *&bundleControllers = MSHookIvar<NSMutableArray *>(self, "_bundleControllers");
+	// if (bundleControllers == nil)
+	// 	bundleControllers = [[NSMutableArray alloc] init];
+	PLLog(@"bundleControllers is %p.", bundleControllers);
 	NSString *title = nil;
 	NSString *specifierID = nil;
 	result = SpecifiersFromPlist(properties, [self specifier], target, plistName, [self bundle], &title, &specifierID, self, &bundleControllers);
 
 	if(title)
 		[self setTitle:title];
+		// [self setTitle:self.specifier.name];
 
 	if(specifierID)
 		[self setSpecifierID:specifierID];
@@ -465,6 +480,10 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 		%init(Firmware_lt_60);
 	} else {
 		%init(Firmware_ge_60);
+	}
+
+	if (!ROOTLESS) {
+		%init(Rootful);
 	}
 
 	void *preferencesHandle = dlopen("/System/Library/PrivateFrameworks/Preferences.framework/Preferences", RTLD_LAZY | RTLD_NOLOAD);

@@ -388,7 +388,11 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 + (NSBundle *)bundleWithPath:(NSString *)path {
 	NSString *newPath = nil;
 	// This path shouldn't be used, but...
+	#if SIMULATOR
+	NSRange sysRange = [path rangeOfString:@"/opt/simject/PreferenceBundles" options:0];
+	#else
 	NSRange sysRange = [path rangeOfString:@"/var/jb/System/Library/PreferenceBundles" options:0];
+	#endif
 	if(sysRange.location != NSNotFound) {
 		newPath = [path stringByReplacingCharactersInRange:sysRange withString:@"/var/jb/Library/PreferenceBundles"];
 	}
@@ -415,12 +419,20 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 	if(isBundle) {
 		// Second Try (bundlePath key failed)
 		if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath])
+			#if SIMULATOR
+			bundlePath = [NSString stringWithFormat:@"/opt/simject/PreferenceBundles/%@.bundle", bundleName];
+			#else
 			bundlePath = [NSString stringWithFormat:@"/var/jb/Library/PreferenceBundles/%@.bundle", bundleName];
+			#endif
 
 		// Third Try (/Library failed)
 		// This path shouldn't be used, but...
 		if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath])
+			#if SIMULATOR
+			bundlePath = [NSString stringWithFormat:@"/opt/simject/PreferenceBundles/%@.bundle", bundleName];
+			#else
 			bundlePath = [NSString stringWithFormat:@"/var/jb/System/Library/PreferenceBundles/%@.bundle", bundleName];
+			#endif
 
 		// Really? (/System/Library failed...)
 		if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath]) {
@@ -473,6 +485,7 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 @end
 
 %ctor {
+	PLLog(@"libprefs loaded!");
 	_Firmware_lt_60 = kCFCoreFoundationVersionNumber < 793.00;
 	%init;
 

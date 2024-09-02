@@ -3,6 +3,7 @@
 #import <Preferences/PSBundleController.h>
 #import <Preferences/PSTableCell.h>
 #import <substrate.h>
+#import <roothide.h>
 
 #import <dlfcn.h>
 
@@ -308,13 +309,15 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 %end
 %end
 
-%hook PSListController
 %group Firmware_ge_60
+%hook PSListController
 - (void)lazyLoadBundle:(PSSpecifier *)specifier {
 	pl_lazyLoadBundleCore(self, _cmd, specifier, (void(*)(id, SEL, PSSpecifier *))&%orig);
 }
 %end
+%end
 
+%hook PSListController
 %new
 - (PSViewController *)controllerForSpecifier:(PSSpecifier *)specifier
 {
@@ -352,12 +355,20 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 
 	PLLog(@"Loading specifiers from PSListController's specifier's properties.");
 	NSMutableArray *&bundleControllers = MSHookIvar<NSMutableArray *>(self, "_bundleControllers");
+	
+	// This code fixes the problem that the Safari website setting return crashes after entering the setting item.
+ 	if(!bundleControllers){return result;}
+	
 	NSString *title = nil;
 	NSString *specifierID = nil;
 	result = SpecifiersFromPlist(properties, [self specifier], target, plistName, [self bundle], &title, &specifierID, self, &bundleControllers);
 
-	if(title)
-		[self setTitle:title];
+	//if(title)
+	//	[self setTitle:title];
+
+	// Fix the blank titles of the phone setting items [Mute Unknown Calls] and [Call Blocking and Identification] 
+ 	if(title)
+ 		[self setTitle:self.specifier.name];
 
 	if(specifierID)
 		[self setSpecifierID:specifierID];
@@ -370,9 +381,9 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 + (NSBundle *)bundleWithPath:(NSString *)path {
 	NSString *newPath = nil;
 	// This path shouldn't be used, but...
-	NSRange sysRange = [path rangeOfString:@"/var/jb/System/Library/PreferenceBundles" options:0];
+	NSRange sysRange = [path rangeOfString:jbroot(@"/System/Library/PreferenceBundles") options:0];
 	if(sysRange.location != NSNotFound) {
-		newPath = [path stringByReplacingCharactersInRange:sysRange withString:@"/var/jb/Library/PreferenceBundles"];
+		newPath = [path stringByReplacingCharactersInRange:sysRange withString:jbroot(@"/Library/PreferenceBundles")];
 	}
 	if(newPath && [[NSFileManager defaultManager] fileExistsAtPath:newPath]) {
 		path = newPath;
@@ -397,12 +408,12 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 	if(isBundle) {
 		// Second Try (bundlePath key failed)
 		if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath])
-			bundlePath = [NSString stringWithFormat:@"/var/jb/Library/PreferenceBundles/%@.bundle", bundleName];
+			bundlePath = [NSString stringWithFormat:jbroot(@"/Library/PreferenceBundles/%@.bundle"), bundleName];
 
 		// Third Try (/Library failed)
 		// This path shouldn't be used, but...
 		if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath])
-			bundlePath = [NSString stringWithFormat:@"/var/jb/System/Library/PreferenceBundles/%@.bundle", bundleName];
+			bundlePath = [NSString stringWithFormat:jbroot(@"/System/Library/PreferenceBundles/%@.bundle"), bundleName];
 
 		// Really? (/System/Library failed...)
 		if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath]) {

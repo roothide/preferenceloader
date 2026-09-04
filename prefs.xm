@@ -3,6 +3,7 @@
 #import <Preferences/PSBundleController.h>
 #import <Preferences/PSTableCell.h>
 #import <substrate.h>
+#import <roothide.h>
 
 #import <dlfcn.h>
 
@@ -391,10 +392,10 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 	#if SIMULATOR
 	NSRange sysRange = [path rangeOfString:@"/opt/simject/PreferenceBundles" options:0];
 	#else
-	NSRange sysRange = [path rangeOfString:@"/var/jb/System/Library/PreferenceBundles" options:0];
+	NSRange sysRange = [path rangeOfString:jbroot(@"/System/Library/PreferenceBundles") options:0];
 	#endif
 	if(sysRange.location != NSNotFound) {
-		newPath = [path stringByReplacingCharactersInRange:sysRange withString:@"/var/jb/Library/PreferenceBundles"];
+		newPath = [path stringByReplacingCharactersInRange:sysRange withString:jbroot(@"/Library/PreferenceBundles")];
 	}
 	if(newPath && [[NSFileManager defaultManager] fileExistsAtPath:newPath]) {
 		path = newPath;
@@ -422,7 +423,7 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 			#if SIMULATOR
 			bundlePath = [NSString stringWithFormat:@"/opt/simject/PreferenceBundles/%@.bundle", bundleName];
 			#else
-			bundlePath = [NSString stringWithFormat:@"/var/jb/Library/PreferenceBundles/%@.bundle", bundleName];
+			bundlePath = [NSString stringWithFormat:jbroot(@"/Library/PreferenceBundles/%@.bundle"), bundleName];
 			#endif
 
 		// Third Try (/Library failed)
@@ -431,7 +432,7 @@ static void pl_lazyLoadBundleCore(id self, SEL _cmd, PSSpecifier *specifier, voi
 			#if SIMULATOR
 			bundlePath = [NSString stringWithFormat:@"/opt/simject/PreferenceBundles/%@.bundle", bundleName];
 			#else
-			bundlePath = [NSString stringWithFormat:@"/var/jb/System/Library/PreferenceBundles/%@.bundle", bundleName];
+			bundlePath = [NSString stringWithFormat:jbroot(@"/System/Library/PreferenceBundles/%@.bundle"), bundleName];
 			#endif
 
 		// Really? (/System/Library failed...)
